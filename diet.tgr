@@ -1,0 +1,41 @@
+trigger checkDuplicatesInDailyDiet on DailyDiet (before insert, before update)
+    {
+
+        // Create maps for all patient, all dates, all diets and all food items
+        Set<ID>  Patients = new Set<ID>();
+        Set<Date> Dates = new Set<Date>();
+        Set<ID>  Diets   = new Set<ID>();
+        Set<ID>  FoodItems = new Set<ID>();
+
+        // For each inserted or updated record, map all patient, all dates, all diets and all food items
+
+        for (SF__Daily_Diet__c d: Trigger.new)
+
+        {
+            Patients.add(d.SF__Patient__c);
+            Dates.add(d.SF__Date__c);
+            Diets.add(d.SF__Diet__c);
+            FoodItems.add(d.SF__Food_Item__c);
+        }
+
+
+        // Get all daily diet records of any of the patients in any of the dates in trigger data
+
+        Map<ID, SF__Daily_Diet__c> duplicates =
+            new Map<ID, SF__Daily_Diet__c>([
+
+            select
+               Id,
+               SF__Patient__c,
+               SF__Date__c,
+               SF__Diet__c,
+               SF__Food_Item__c
+
+           from SF__Daily_Diet__c
+
+           where
+
+               SF__Patient__c in :Patients and
+               SF__Date__c in :Dates and
+               SF__Diet__c in :Diets and
+               SF__Food_Item__c in :FoodItems]);
