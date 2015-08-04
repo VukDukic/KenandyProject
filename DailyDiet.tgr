@@ -1,0 +1,42 @@
+List<DailyDiet> patientsToUpdate = new List<DailyDiet>{}
+Set<ID> setOfPatients = new Set<ID>();
+
+for (SF__Daily_Diet__c d: Trigger.new) {
+   setOfPatients.add(x.Patient);   // Add the Id of the Patient from this trigger record to the set
+}
+
+// Get all daily diet records of any of the patients in any of the dates in trigger data
+List <SF__Daily_Diet__c> patient_records = 
+     new List<SF__Daily_Diet__c>(
+           [select Id, SF__Patient__c, SF__Date__c, SF__Diet__c, SF__Food_Item__c
+                from SF__Daily_Diet__c where SF__Patient__c in :setOfPatients];
+
+// as you did in your previous post, if you think this will return too many records, you could build another setOfFood_Items, and 
+// change the query to: "where SF_Patient__c in :setOfPatients and SF_Food_Item__c in :setofFood_Items"  However I'm not 
+// sure if that will really reduce the numbers all that much in exchange for a more complicated query.
+//
+// Also, if the Trigger will almost always fire with just one record in Trigger.new, you could also write a check for 
+// Trigger.new.size() ==1 and then issue the query directly against the values in Trigger.new.
+
+
+
+for x in Trigger.new {
+   for p in patient_records {
+        if ((p.SF__date__c != x.SF__date__c) or 
+            (p.SF__food_item__c != x.SF__food_item__c) or 
+            (p.SF__diet__c != x.SF__diet__c)) continue;
+
+        // If we're here, it is a duplicate.
+        if (Trigger.isInsert()) {
+            x.addError('Don't want to insert a duplicate.  Instead, update the original');
+            p.SF__Quantity__c = p.SF__Quantity__c + 1;
+            patientsToUpdate.add(p)
+        } else {
+            // update
+            x.addError('Not allowed to update existing record to be a duplicate of an already existing record');
+        }
+   }
+}
+update patientsToUpdate;
+
+return;
