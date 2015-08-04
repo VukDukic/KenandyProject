@@ -1,0 +1,42 @@
+trigger checkDuplicatesRegistrations on Attendee__c (before insert, before update)
+    {
+
+        // Create maps for all events, all registration dates, all attendee names and all emails.
+        Set<ID>  Events = new Set<ID>();
+        Set<Date> RegistrationDates = new Set<Date>();
+        Set<ID>  AttendeeNames   = new Set<ID>();
+        Set<ID>  Emails = new Set<ID>();
+
+        // For each inserted or updated record, map all events, all registration dates, all attendee names and all emails.
+
+        for (Attendee__c d: Trigger.new)
+
+        {
+            Events.add(d.Event__c);
+            RegistrationDates.add(d.Registration_Date__c);
+            AttendeeNames.add(d.Name);
+            Emails.add(d.Email__c);
+        }
+
+
+        // Get all event records of any of the attendees in any of the dates in trigger data
+
+        Map<ID, Attendee__c> duplicates =
+            new Map<ID, Attendee__c>([
+
+            select
+               Id,
+               Event__c,
+               Registration_Date__c,
+               Name,
+               Email__c
+
+           from Attendee__c
+
+           where
+
+               Event__c in :Events and
+               Registration_Date__c in :RegistrationDates and
+              Name in :AttendeeNames and
+               Email__c in :Emails]);
+    }
